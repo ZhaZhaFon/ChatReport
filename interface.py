@@ -70,7 +70,7 @@ with st.sidebar:
     """)
     #st.markdown('<a href="https://github.com/PierXuY/ChatGPT-Assistant" target="_blank" rel="ChatGPT-Assistant">'
     st.markdown('<a href="https://github.com/ZhaZhaFon" target="_blank" rel="ZhaZhaFon">'
-                '<img src="https://badgen.net/badge/icon/GitHub?icon=github&amp;label=ChatGPT Assistant" alt="GitHub">'
+                '<img src="https://badgen.net/badge/icon/GitHub?icon=github&amp;label=ZhaZhaFon" alt="GitHub">'
                 '</a>', unsafe_allow_html=True)
 
 # 加载数据
