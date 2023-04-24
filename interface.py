@@ -1,3 +1,11 @@
+# TODO
+
+API_KEY = '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'
+TITLE = 'ChatGPT对话机器人'
+MODEL = "gpt-3.5-turbo"
+
+# TODO
+
 from helper import *
 import streamlit as st
 import uuid
@@ -6,21 +14,18 @@ import pandas as pd
 import openai
 from requests.models import ChunkedEncodingError
 from streamlit.components import v1
-from custom import model, css_code, js_code, set_context_all
+from custom import model, js_code, set_context_all
+import custom
+import keyboard
 
-# TODO
-API_KEY = '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'
-# TODO
-
-st.set_page_config(page_title='ChatGPT Assistant', layout='wide', page_icon='🤖')
-# 自定义元素样式
-st.markdown(css_code, unsafe_allow_html=True)
+st.set_page_config(page_title=TITLE, layout='wide', page_icon='🤖')
+st.markdown(custom.css_code, unsafe_allow_html=True)
 
 if "initial_settings" not in st.session_state:
     # 历史聊天窗口
     st.session_state["path"] = 'history_chats_file'
     st.session_state['history_chats'] = get_history_chats(st.session_state["path"])
-    # ss参数初始化
+    # 参数初始化
     st.session_state['error_info'] = ''
     st.session_state["current_chat_index"] = 0
     st.session_state['user_input_content'] = ''
@@ -28,7 +33,7 @@ if "initial_settings" not in st.session_state:
     st.session_state["initial_settings"] = True
 
 with st.sidebar:
-    st.markdown("# 🤖 聊天窗口")
+    st.markdown("# 🤖 对话窗管理")
     current_chat = st.radio(
         label='历史聊天窗口',
         format_func=lambda x: x.split('_')[0] if '_' in x else x,
@@ -42,13 +47,13 @@ with st.sidebar:
 
     c1, c2 = st.columns(2)
 
-    create_chat_button = c1.button('新建', use_container_width=True, key='create_chat_button')
+    create_chat_button = c1.button('新建对话窗', use_container_width=True, key='create_chat_button')
     if create_chat_button:
         st.session_state['history_chats'] = ['New Chat_' + str(uuid.uuid4())] + st.session_state['history_chats']
         st.session_state["current_chat_index"] = 0
         st.experimental_rerun()
 
-    delete_chat_button = c2.button('删除', use_container_width=True, key='delete_chat_button')
+    delete_chat_button = c2.button('删除对话窗', use_container_width=True, key='delete_chat_button')
     if delete_chat_button:
         if len(st.session_state['history_chats']) == 1:
             chat_init = 'New Chat_' + str(uuid.uuid4())
@@ -62,16 +67,17 @@ with st.sidebar:
         remove_data(st.session_state["path"], current_chat)
         st.experimental_rerun()
 
-    for i in range(5):
-        st.write("\n")
-    st.caption("""
-    - 双击页面可直接定位输入栏
-    - Ctrl + Enter 可快捷提交问题
-    """)
-    #st.markdown('<a href="https://github.com/PierXuY/ChatGPT-Assistant" target="_blank" rel="ChatGPT-Assistant">'
-    st.markdown('<a href="https://github.com/ZhaZhaFon" target="_blank" rel="ZhaZhaFon">'
-                '<img src="https://badgen.net/badge/icon/GitHub?icon=github&amp;label=ZhaZhaFon" alt="GitHub">'
-                '</a>', unsafe_allow_html=True)
+    #st.image('qrcode.jpg')
+
+    #for i in range(5):
+    #    st.write("\n")
+    #st.caption("""
+    #- 双击页面可直接定位输入栏
+    #- Ctrl + Enter 可快捷提交问题
+    #""")
+    #st.markdown('<a href="https://github.com/ZhaZhaFon" target="_blank" rel="ZhaZhaFon">'
+    #            '<img src="https://badgen.net/badge/icon/GitHub?icon=github&amp;label=ZhaZhaFon" alt="GitHub">'
+    #            '</a>', unsafe_allow_html=True)
 
 # 加载数据
 if "history" + current_chat not in st.session_state:
@@ -84,7 +90,6 @@ if "history" + current_chat not in st.session_state:
 
 # 对话展示
 show_messages(st.session_state["history" + current_chat])
-
 
 # 数据写入文件
 def write_data(new_chat_name=current_chat):
@@ -105,7 +110,6 @@ def write_data(new_chat_name=current_chat):
             save_data(st.session_state["path"], new_chat_name, st.session_state["history" + current_chat],
                       st.session_state["paras"], st.session_state["contexts"])
 
-
 # 输入内容展示
 area_user_svg = st.empty()
 area_user_content = st.empty()
@@ -115,12 +119,13 @@ area_gpt_content = st.empty()
 # 报错展示
 area_error = st.empty()
 
-st.write("\n")
-st.write("\n")
-st.header('ChatGPT Assistant')
-tap_input, tap_context, tap_set = st.tabs(['💬 聊天', '🗒️ 预设', '⚙️ 设置'])
+# 页面选项卡
+st.header(TITLE)
+tap_input, tap_context, tap_set = st.tabs(['💬 即刻聊天', '🗒️ 预设场景', '⚙️ 参数设置'])
 
+# 预设场景
 with tap_context:
+
     set_context_list = list(set_context_all.keys())
     context_select_index = set_context_list.index(st.session_state['context_select' + current_chat + "value"])
     st.session_state['context_select' + current_chat + "value"] = st.selectbox(
@@ -129,14 +134,20 @@ with tap_context:
         key='context_select' + current_chat,
         index=context_select_index,
         on_change=write_data)
-    st.caption(set_context_all[st.session_state['context_select' + current_chat + "value"]])
+    s = set_context_all[st.session_state['context_select' + current_chat + "value"]]
 
     st.session_state['context_input' + current_chat + "value"] = st.text_area(
         label='补充或自定义上下文：', key="context_input" + current_chat,
         value=st.session_state['context_input' + current_chat + "value"],
         on_change=write_data)
+
+    st.caption("默认Prompt:")
+    if set_context_all[st.session_state['context_select' + current_chat + "value"]] == '' and st.session_state['context_input' + current_chat + "value"] == '':
+        st.caption('无')
+    st.caption(set_context_all[st.session_state['context_select' + current_chat + "value"]])
     st.caption(st.session_state['context_input' + current_chat + "value"])
 
+# 参数设置
 with tap_set:
     def clear_button_callback():
         st.session_state['history' + current_chat] = copy.deepcopy(initial_content_history)
@@ -216,13 +227,12 @@ with tap_input:
                 # 写入新文件
                 write_data(new_name)
 
-
     with st.form("input_form", clear_on_submit=True):
         user_input = st.text_area("**输入：**", key="user_input_area")
         submitted = st.form_submit_button("确认提交", use_container_width=True, on_click=input_callback)
     if submitted:
         st.session_state['user_input_content'] = user_input
-
+    
     if st.session_state['user_input_content'] != '':
         if 'r' in st.session_state:
             st.session_state.pop("r")
@@ -246,16 +256,16 @@ with tap_input:
             "presence_penalty": st.session_state["presence_penalty" + current_chat],
             "frequency_penalty": st.session_state["frequency_penalty" + current_chat],
         }
-        with st.spinner("🤔"):
+        with st.spinner("🤔 ChatGPT正在思考..."):
             try:
                 if apikey := st.session_state['apikey_input']:
                     openai.api_key = apikey
                 else:
                     openai.api_key = st.secrets["apikey"]
-                r = openai.ChatCompletion.create(model=model, messages=history_need_input, stream=True,
+                r = openai.ChatCompletion.create(model=MODEL, messages=history_need_input, stream=True,
                                                  **paras_need_input)
             except (FileNotFoundError, KeyError):
-                area_error.error("缺失 OpenAI API Key，请在复制项目后配置Secrets，或者在设置中进行临时配置。"
+                area_error.error("缺失 OpenAI API Key，请在【⚙️ 参数设置】中进行配置。"
                                  "详情见[项目仓库](https://github.com/PierXuY/ChatGPT-Assistant)。")
             except openai.error.AuthenticationError:
                 area_error.error("无效的 OpenAI API Key。")

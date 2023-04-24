@@ -1,4 +1,8 @@
 set_context = {
+    
+    "Python程序员":
+        "你是一名Python程序设计工程师，下面请帮我完整一些程序设计相关的工作，如有代码，请务必附上详细的中文注释。",
+
     "英语学术润色":
         "Below is a paragraph from an academic paper. Polish the writing to meet the academic style, improve the "
         "spelling, grammar, clarity, concision and overall readability."
