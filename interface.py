@@ -11,12 +11,11 @@ import streamlit as st
 import uuid
 import copy
 import pandas as pd
-import openai
+import openaifrom custom import model, js_code, set_context_all
 from requests.models import ChunkedEncodingError
 from streamlit.components import v1
-from custom import model, js_code, set_context_all
+from custom import js_code, set_context_all
 import custom
-import keyboard
 
 st.set_page_config(page_title=TITLE, layout='wide', page_icon='🤖')
 st.markdown(custom.css_code, unsafe_allow_html=True)
