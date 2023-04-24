@@ -11,7 +11,7 @@ import streamlit as st
 import uuid
 import copy
 import pandas as pd
-import openaifrom custom import model, js_code, set_context_all
+import openai
 from requests.models import ChunkedEncodingError
 from streamlit.components import v1
 from custom import js_code, set_context_all
