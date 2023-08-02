@@ -71,8 +71,8 @@ def show_messages(messages: list):
     for each in messages:
         if (each["role"] == "user") or (each["role"] == "assistant"):
             show_each_message(each["content"], each["role"])
-        if each["role"] == "assistant":
-            st.write("---")
+        #if each["role"] == "assistant":
+        #    st.write("---")
 
 
 # 根据context_level提取history

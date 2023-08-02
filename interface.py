@@ -4,6 +4,9 @@ API_KEY = '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'
 TITLE = 'ChatGPT对话机器人'
 MODEL = "gpt-3.5-turbo"
 
+TABLE_TIMING = './研报-择时.xlsx'
+TABLE_STYLE = './研报-风格.xlsx'
+
 # TODO
 
 from helper import *
@@ -42,7 +45,6 @@ with st.sidebar:
         key='current_chat' + st.session_state['history_chats'][st.session_state["current_chat_index"]],
         # on_change=current_chat_callback  # 此处不适合用回调，无法识别到窗口增减的变动
     )
-    st.write("---")
 
     c1, c2 = st.columns(2)
 
@@ -66,6 +68,11 @@ with st.sidebar:
         remove_data(st.session_state["path"], current_chat)
         st.experimental_rerun()
 
+    st.write("---")
+    
+    startdate = st.text_input(label="起始日期 ( e.g. 2022-11-01 ) ", value="2022-11-01")
+    enddate = st.text_input(label="截止日期 ( e.g. 2022-11-01 ) ", value="2022-11-01")
+    
     #st.image('qrcode.jpg')
 
     #for i in range(5):
@@ -77,6 +84,11 @@ with st.sidebar:
     #st.markdown('<a href="https://github.com/ZhaZhaFon" target="_blank" rel="ZhaZhaFon">'
     #            '<img src="https://badgen.net/badge/icon/GitHub?icon=github&amp;label=ZhaZhaFon" alt="GitHub">'
     #            '</a>', unsafe_allow_html=True)
+
+st.header(TITLE)
+df_timing = pd.read_excel(TABLE_TIMING, sheet_name='择时')
+df_timing['publishDate'] = df_timing['publishDate'].astype('str')
+#st.dataframe(df_timing)
 
 # 加载数据
 if "history" + current_chat not in st.session_state:
@@ -119,7 +131,6 @@ area_gpt_content = st.empty()
 area_error = st.empty()
 
 # 页面选项卡
-st.header(TITLE)
 tap_input, tap_context, tap_set = st.tabs(['💬 即刻聊天', '🗒️ 预设场景', '⚙️ 参数设置'])
 
 # 预设场景
@@ -211,6 +222,7 @@ with tap_set:
     )
     st.caption("[官网参数说明](https://platform.openai.com/docs/api-reference/completions/create)")
 
+report_text = ""
 with tap_input:
     def input_callback():
         if st.session_state['user_input_area'] != "":
@@ -230,20 +242,41 @@ with tap_input:
         user_input = st.text_area("**输入：**", key="user_input_area")
         submitted = st.form_submit_button("确认提交", use_container_width=True, on_click=input_callback)
     if submitted:
-        st.session_state['user_input_content'] = user_input
+        df_selected = df_timing[(startdate<=df_timing['publishDate'])&(df_timing['publishDate']<=enddate)]
+        for i in df_selected.index.tolist():
+            row = df_selected.loc[i, :]
+            report_text_row = f"【报告{i}｜{row['publishDate']}】{row['orgName']}（{row['author']}）：{row['title']}\n\n"
+            report_text += report_text_row
+        report_text += "\n\n"
+        st.session_state['report_text'] = report_text
+            
+        ###st.dataframe(df_selected)
+        knowledge = "你是一个基金经理，请结合以下研究报告，预判市场行情并回答问题。\n要求：回答要依据给定的报告、有投资逻辑的具体推理，并在回答的最后一行给出明确的投资观点（若看多打印【看多大市】、若看空打印【看空大市】）。\n以下是研究报告："
+        for i in df_selected.index.tolist():
+            knowledge += f"报告{i}（{df_selected.loc[i, 'title']}）、"
+        original_input = user_input
+        prompt_input = f"{knowledge[:-1]}。\n问题：{user_input}"
+        ###st.write(prompt_input)
+        st.session_state['user_input_content'] = prompt_input
     
     if st.session_state['user_input_content'] != '':
         if 'r' in st.session_state:
             st.session_state.pop("r")
             st.session_state[current_chat + 'report'] = ""
-        st.session_state['pre_user_input_content'] = (remove_hashtag_right__space(st.session_state['user_input_content']
-                                                                                  .replace('\n', '\n\n')))
+        ###st.session_state['pre_user_input_content'] = (remove_hashtag_right__space(st.session_state['user_input_content']
+        ###                                                                          .replace('\n', '\n\n')))
+        st.session_state['pre_user_input_content'] = prompt_input
+                                                                                  
+        st.dataframe(df_selected)
         st.session_state['user_input_content'] = ''
-        show_each_message(st.session_state['pre_user_input_content'], 'user',
+        #show_each_message(st.session_state['pre_user_input_content'], 'user',
+        show_each_message(user_input, 'user',
                           [area_user_svg.markdown, area_user_content.markdown])
         context_level_tem = st.session_state['context_level' + current_chat]
+        ###history_tem = get_history_input(st.session_state["history" + current_chat], context_level_tem) + \
+        ###              [{"role": "user", "content": st.session_state['pre_user_input_content']}]
         history_tem = get_history_input(st.session_state["history" + current_chat], context_level_tem) + \
-                      [{"role": "user", "content": st.session_state['pre_user_input_content']}]
+                         [{"role": "user", "content": prompt_input}]
         history_need_input = ([{"role": "system",
                                 "content": set_context_all[st.session_state['context_select' + current_chat]]}]
                               + [{"role": "system",
@@ -286,9 +319,11 @@ if ("r" in st.session_state) and (current_chat == st.session_state["chat_of_r"])
         for e in st.session_state["r"]:
             if "content" in e["choices"][0]["delta"]:
                 st.session_state[current_chat + 'report'] += e["choices"][0]["delta"]["content"]
-                show_each_message(st.session_state['pre_user_input_content'], 'user',
+                ###show_each_message(st.session_state['pre_user_input_content'], 'user',
+                show_each_message(user_input, 'user',
                                   [area_user_svg.markdown, area_user_content.markdown])
-                show_each_message(st.session_state[current_chat + 'report'], 'assistant',
+                ###show_each_message(st.session_state[current_chat + 'report'], 'assistant',
+                show_each_message(f"# 参考资料：\n\n{st.session_state['report_text']}\n\n# 分析：\n\n"+st.session_state[current_chat + 'report'], 'assistant',
                                   [area_gpt_svg.markdown, area_gpt_content.markdown])
     except ChunkedEncodingError:
         area_error.error("网络状况不佳，请刷新页面重试。")
@@ -297,12 +332,15 @@ if ("r" in st.session_state) and (current_chat == st.session_state["chat_of_r"])
         pass
     else:
         # 保存内容
+        ###st.session_state["history" + current_chat].append(
+        ###    {"role": "user", "content": st.session_state['pre_user_input_content']})
         st.session_state["history" + current_chat].append(
-            {"role": "user", "content": st.session_state['pre_user_input_content']})
+            {"role": "user", "content": user_input})
         st.session_state["history" + current_chat].append(
-            {"role": "assistant", "content": st.session_state[current_chat + 'report']})
+        ###    {"role": "assistant", "content": st.session_state[current_chat + 'report']})
+            {"role": "assistant", "content": f"# 参考资料：\n\n{st.session_state['report_text']}\n\n# 分析：\n\n"+st.session_state[current_chat + 'report']})
         write_data()
-
+    
     # 用户在网页点击stop时，ss某些情形下会暂时为空
     if current_chat + 'report' in st.session_state:
         st.session_state.pop(current_chat + 'report')
