@@ -4,8 +4,7 @@ API_KEY = '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'
 TITLE = 'ChatGPT对话机器人'
 MODEL = "gpt-3.5-turbo"
 
-TABLE_TIMING = './研报-择时.xlsx'
-TABLE_STYLE = './研报-风格.xlsx'
+TABLE_TIMING = 'https://github.com/ZhaZhaFon/ChatReport/files/12250267/reports-timing.xlsx'
 
 # TODO
 
