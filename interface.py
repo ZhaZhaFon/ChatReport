@@ -1,10 +1,11 @@
 # TODO
 
-API_KEY = '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'
+API_KEY = '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'
 TITLE = 'ChatGPT对话机器人'
 MODEL = "gpt-3.5-turbo"
 
 TABLE_TIMING = 'https://github.com/ZhaZhaFon/ChatReport/files/12250267/reports-timing.xlsx'
+#TABLE_TIMING = 'reports-timing.xlsx'
 
 # TODO
 
