@@ -1,6 +1,6 @@
 # TODO
 
-API_KEY = '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'
+API_KEY = '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'
 TITLE = 'ChatGPT对话机器人'
 MODEL = "gpt-3.5-turbo"
 
